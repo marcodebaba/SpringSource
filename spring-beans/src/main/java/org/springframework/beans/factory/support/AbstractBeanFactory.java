@@ -254,16 +254,17 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			}
 			beanInstance = getObjectForBeanInstance(sharedInstance, requiredType, name, beanName, null);
 		}
-
 		else {
 			// Fail if we're already creating this bean instance:
 			// We're assumably within a circular reference.
+			// 如果是多例bean且正在创建中，则报错
 			if (isPrototypeCurrentlyInCreation(beanName)) {
 				throw new BeanCurrentlyInCreationException(beanName);
 			}
 
 			// Check if bean definition exists in this factory.
 			BeanFactory parentBeanFactory = getParentBeanFactory();
+			// 当前BeanFactory里没有此beanName，则去父BeanFactory去找
 			if (parentBeanFactory != null && !containsBeanDefinition(beanName)) {
 				// Not found -> check parent.
 				String nameToLookup = originalBeanName(name);
@@ -340,6 +341,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 							throw ex;
 						}
 					});
+					// 如果是FactoryBean的话，就要返回getObject对应的Bean对象
 					beanInstance = getObjectForBeanInstance(sharedInstance, requiredType, name, beanName, mbd);
 				}
 
@@ -396,6 +398,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			}
 		}
 
+		// 判断创建的Bean对象的类型是否是需要的类型，如果不是则进行类型转换
 		return adaptBeanInstance(name, beanInstance, requiredType);
 	}
 
@@ -1007,6 +1010,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * Return the internal cache of pre-filtered post-processors,
 	 * freshly (re-)building it if necessary.
 	 * @since 5.3
+	 *
+	 * BeanPostProcessor分类缓存
 	 */
 	BeanPostProcessorCache getBeanPostProcessorCache() {
 		synchronized (this.beanPostProcessors) {
@@ -1558,6 +1563,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			throws CannotLoadBeanClassException {
 
 		try {
+			// BeanDefinition对应的Class是否已经被加载
 			if (mbd.hasBeanClass()) {
 				return mbd.getBeanClass();
 			}
@@ -1582,6 +1588,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	private @Nullable Class<?> doResolveBeanClass(RootBeanDefinition mbd, Class<?>... typesToMatch)
 			throws ClassNotFoundException {
 
+		// Spring中ClassLoader的获取方式
 		ClassLoader beanClassLoader = getBeanClassLoader();
 		ClassLoader dynamicLoader = beanClassLoader;
 		boolean freshResolve = false;
@@ -1846,12 +1853,14 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			if (beanInstance instanceof NullBean) {
 				return beanInstance;
 			}
+			// beanName有&符号，但是beanInstance不是FactoryBean
 			if (!(beanInstance instanceof FactoryBean)) {
 				throw new BeanIsNotAFactoryException(beanName, beanInstance.getClass());
 			}
 			if (mbd != null) {
 				mbd.isFactoryBean = true;
 			}
+			// 返回FactoryBean对象
 			return beanInstance;
 		}
 

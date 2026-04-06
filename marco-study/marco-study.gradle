@@ -1,0 +1,14 @@
+description = "Marco's Spring Study Module"
+
+apply plugin: "application"
+
+application {
+	mainClass = "org.springframework.study.MySpringStudy"
+}
+
+dependencies {
+	implementation(project(":spring-context"))
+	implementation(project(":spring-beans"))
+	implementation(project(":spring-aop"))
+	implementation(project(":spring-core"))
+}

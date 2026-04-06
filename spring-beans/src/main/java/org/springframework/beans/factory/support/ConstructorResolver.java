@@ -148,6 +148,7 @@ class ConstructorResolver {
 		else {
 			Object[] argsToResolve = null;
 			synchronized (mbd.constructorArgumentLock) {
+				// 缓存构造方法
 				constructorToUse = (Constructor<?>) mbd.resolvedConstructorOrFactoryMethod;
 				if (constructorToUse != null && mbd.constructorArgumentsResolved) {
 					// Found a cached constructor...
@@ -158,6 +159,7 @@ class ConstructorResolver {
 				}
 			}
 			if (argsToResolve != null) {
+				// 缓存构造方法的参数值
 				argsToUse = resolvePreparedArguments(beanName, mbd, bw, constructorToUse, argsToResolve);
 			}
 		}
@@ -168,6 +170,7 @@ class ConstructorResolver {
 			if (candidates == null) {
 				Class<?> beanClass = mbd.getBeanClass();
 				try {
+					// 当前类里所有的构造方法
 					candidates = (mbd.isNonPublicAccessAllowed() ?
 							beanClass.getDeclaredConstructors() : beanClass.getConstructors());
 				}
@@ -178,14 +181,17 @@ class ConstructorResolver {
 				}
 			}
 
+			// 只有一个构造方法的情况
 			if (candidates.length == 1 && explicitArgs == null && !mbd.hasConstructorArgumentValues()) {
 				Constructor<?> uniqueCandidate = candidates[0];
+				// 且构造方法是无参构造方法
 				if (uniqueCandidate.getParameterCount() == 0) {
 					synchronized (mbd.constructorArgumentLock) {
 						mbd.resolvedConstructorOrFactoryMethod = uniqueCandidate;
 						mbd.constructorArgumentsResolved = true;
 						mbd.resolvedConstructorArguments = EMPTY_ARGS;
 					}
+					// 直接实例化并返回
 					bw.setBeanInstance(instantiate(beanName, mbd, uniqueCandidate, EMPTY_ARGS));
 					return bw;
 				}
@@ -196,6 +202,8 @@ class ConstructorResolver {
 					mbd.getResolvedAutowireMode() == AutowireCapableBeanFactory.AUTOWIRE_CONSTRUCTOR);
 			ConstructorArgumentValues resolvedValues = null;
 
+			// 根据getBean或者BeanDefinition中指定的构造方法参数值决定最小参数个数
+			// 接下来遍历过程中，直接给过滤掉参数个数小于minNrOfArgs的构造方法
 			int minNrOfArgs;
 			if (explicitArgs != null) {
 				minNrOfArgs = explicitArgs.length;
@@ -206,11 +214,13 @@ class ConstructorResolver {
 				minNrOfArgs = resolveConstructorArguments(beanName, mbd, bw, cargs, resolvedValues);
 			}
 
+			// 对构造方法进行排序，public的排在非public的前面，方法参数多的排在方法参数少的前面
 			AutowireUtils.sortConstructors(candidates);
 			int minTypeDiffWeight = Integer.MAX_VALUE;
 			Set<Constructor<?>> ambiguousConstructors = null;
 			Deque<UnsatisfiedDependencyException> causes = null;
 
+			// 遍历每个构造方法，直接过滤掉构造方法参数个数小于minNrOfArgs的构造方法
 			for (Constructor<?> candidate : candidates) {
 				int parameterCount = candidate.getParameterCount();
 
@@ -306,6 +316,7 @@ class ConstructorResolver {
 		}
 
 		Assert.state(argsToUse != null, "Unresolved constructor arguments");
+		// 用constructorToUse和argsToUse来创建对象
 		bw.setBeanInstance(instantiate(beanName, mbd, constructorToUse, argsToUse));
 		return bw;
 	}

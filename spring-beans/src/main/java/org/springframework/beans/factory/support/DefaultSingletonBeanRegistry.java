@@ -368,6 +368,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					if (singletonObject == null) {
 						this.currentCreationThreads.put(beanName, currentThread);
 						try {
+							// 执行createBean()
 							singletonObject = singletonFactory.getObject();
 						}
 						finally {
@@ -401,6 +402,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 
 				if (newSingleton) {
 					try {
+						// 放入单例池
 						addSingleton(beanName, singletonObject);
 					}
 					catch (IllegalStateException ex) {

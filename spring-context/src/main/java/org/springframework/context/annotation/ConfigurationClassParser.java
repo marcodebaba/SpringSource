@@ -246,6 +246,7 @@ class ConfigurationClassParser {
 
 
 	protected void processConfigurationClass(ConfigurationClass configClass, Predicate<String> filter) {
+		// @Conditional注解
 		if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
 			return;
 		}
@@ -280,6 +281,7 @@ class ConfigurationClassParser {
 		try {
 			sourceClass = asSourceClass(configClass, filter);
 			do {
+				// 先解析当前类，如果有父类就会返回父类继续解析
 				sourceClass = doProcessConfigurationClass(configClass, sourceClass, filter);
 			}
 			while (sourceClass != null);
@@ -343,6 +345,7 @@ class ConfigurationClassParser {
 			}
 			for (AnnotationAttributes componentScan : componentScans) {
 				// The config class is annotated with @ComponentScan -> perform the scan immediately
+				// 解析@ComponentScan，也就是扫描
 				Set<BeanDefinitionHolder> scannedBeanDefinitions =
 						this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
 				// Check the set of scanned definitions for any further config classes and parse recursively if needed

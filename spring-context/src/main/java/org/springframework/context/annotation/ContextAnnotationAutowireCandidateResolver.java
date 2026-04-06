@@ -134,6 +134,7 @@ public class ContextAnnotationAutowireCandidateResolver extends QualifierAnnotat
 			}
 
 			Set<String> autowiredBeanNames = new LinkedHashSet<>(2);
+			// 进行依赖查找
 			Object target = this.beanFactory.doResolveDependency(
 					this.descriptor, this.beanName, autowiredBeanNames, null);
 

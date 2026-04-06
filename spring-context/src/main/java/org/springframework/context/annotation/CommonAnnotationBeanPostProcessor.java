@@ -284,10 +284,12 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 		}
 	}
 
-
+	// 找注入点
 	@Override
 	public void postProcessMergedBeanDefinition(RootBeanDefinition beanDefinition, Class<?> beanType, String beanName) {
+		// 找@PostConstruct, @PreDestroy注解的属性或者方法
 		super.postProcessMergedBeanDefinition(beanDefinition, beanType, beanName);
+		// 找@Resource注解的属性或者方法
 		InjectionMetadata metadata = findResourceMetadata(beanName, beanType, null);
 		metadata.checkConfigMembers(beanDefinition);
 	}
@@ -337,6 +339,7 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 		return true;
 	}
 
+	// 处理@Resource注入
 	@Override
 	public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) {
 		InjectionMetadata metadata = findResourceMetadata(beanName, bean.getClass(), pvs);
@@ -412,6 +415,7 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 					currElements.add(new EjbRefElement(field, field, null));
 				}
 				else if (JAKARTA_RESOURCE_TYPE != null && field.isAnnotationPresent(JAKARTA_RESOURCE_TYPE)) {
+					// 静态方法直接报错(和@Autowired不同)
 					if (Modifier.isStatic(field.getModifiers())) {
 						throw new IllegalStateException("@Resource annotation is not supported on static fields");
 					}
@@ -430,6 +434,7 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 						if (Modifier.isStatic(method.getModifiers())) {
 							throw new IllegalStateException("@EJB annotation is not supported on static methods");
 						}
+						// 方法参数个数只能是一个
 						if (method.getParameterCount() != 1) {
 							throw new IllegalStateException("@EJB annotation requires a single-arg method: " + method);
 						}
@@ -544,6 +549,7 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 		Set<String> autowiredBeanNames;
 		String name = element.name;
 
+		// 先按照名字找Bean，这里的名字是指如果注解在set方法上就是去掉set后的那部分名字，如果注解在属性上就是属性的名字
 		if (factory instanceof AutowireCapableBeanFactory autowireCapableBeanFactory) {
 			if (this.fallbackToDefaultTypeMatch && element.isDefaultName && !factory.containsBean(name)) {
 				autowiredBeanNames = new LinkedHashSet<>();
@@ -559,6 +565,7 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 			}
 		}
 		else {
+			// 按照名字找Bean没找到，然后用类型找Bean，这里的类型是指方法入参的类型
 			resource = factory.getBean(name, element.lookupType);
 			autowiredBeanNames = Collections.singleton(name);
 		}
@@ -659,8 +666,10 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 			Class<?> resourceType = resource.type();
 			this.isDefaultName = !StringUtils.hasLength(resourceName);
 			if (this.isDefaultName) {
+				// @Resource的name属性如果没有配置的话，resourceName=属性名字
 				resourceName = this.member.getName();
 				if (this.member instanceof Method && resourceName.startsWith("set") && resourceName.length() > 3) {
+					// 如果@Resource是在方法上的，则根据名字找Bean的时候是根据set方法名字找Bean，而不是根据参数的名字找bean，这点和@Autowired不同
 					resourceName = StringUtils.uncapitalizeAsProperty(resourceName.substring(3));
 				}
 			}
@@ -672,6 +681,7 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 			}
 			else {
 				// No resource type specified... check field/method.
+				// 第一个入参的参数类型
 				resourceType = getResourceType();
 			}
 			this.name = (resourceName != null ? resourceName : "");
@@ -679,6 +689,7 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 			String lookupValue = resource.lookup();
 			this.mappedName = (StringUtils.hasLength(lookupValue) ? lookupValue : resource.mappedName());
 			Lazy lazy = ae.getAnnotation(Lazy.class);
+			// 是否加了@Lazy注解
 			this.lazyLookup = (lazy != null && lazy.value());
 		}
 

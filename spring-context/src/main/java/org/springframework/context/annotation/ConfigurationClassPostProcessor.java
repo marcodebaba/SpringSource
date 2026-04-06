@@ -443,6 +443,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		Set<ConfigurationClass> alreadyParsed = CollectionUtils.newHashSet(configCandidates.size());
 		do {
 			StartupStep processConfig = this.applicationStartup.start("spring.context.config-classes.parse");
+			// 解析@Configuration
 			parser.parse(candidates);
 			parser.validate();
 

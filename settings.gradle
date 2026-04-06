@@ -2,6 +2,7 @@ plugins {
 	id "io.spring.develocity.conventions" version "0.0.22"
 }
 
+include "marco-study"
 include "spring-aop"
 include "spring-aspects"
 include "spring-beans"
