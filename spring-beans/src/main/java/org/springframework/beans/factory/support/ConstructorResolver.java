@@ -167,6 +167,7 @@ class ConstructorResolver {
 		if (constructorToUse == null || argsToUse == null) {
 			// Take specified constructors, if any.
 			Constructor<?>[] candidates = chosenCtors;
+			// 没有加了@Autowired注解的构造方法
 			if (candidates == null) {
 				Class<?> beanClass = mbd.getBeanClass();
 				try {
@@ -181,7 +182,7 @@ class ConstructorResolver {
 				}
 			}
 
-			// 只有一个构造方法的情况
+			// 只有一个可选构造方法的情况
 			if (candidates.length == 1 && explicitArgs == null && !mbd.hasConstructorArgumentValues()) {
 				Constructor<?> uniqueCandidate = candidates[0];
 				// 且构造方法是无参构造方法
@@ -229,6 +230,7 @@ class ConstructorResolver {
 					// do not look any further, there are only less greedy constructors left.
 					break;
 				}
+				// 过滤掉参数个数小于minNrOfArgs的构造方法
 				if (parameterCount < minNrOfArgs) {
 					continue;
 				}
@@ -247,6 +249,7 @@ class ConstructorResolver {
 								}
 							}
 						}
+						// 构造方法注入
 						argsHolder = createArgumentArray(beanName, mbd, resolvedValues, bw, paramTypes, paramNames,
 								getUserDeclaredConstructor(candidate), autowiring, candidates.length == 1);
 					}
@@ -264,9 +267,11 @@ class ConstructorResolver {
 				}
 				else {
 					// Explicit arguments given -> arguments length must match exactly.
+					// 当前构造方法参数个数和不等于getBean指定的参数个数，那么当前构造方法不合适
 					if (parameterCount != explicitArgs.length) {
 						continue;
 					}
+					// 如果参数个数相等，那么当前构造方法就合适
 					argsHolder = new ArgumentsHolder(explicitArgs);
 				}
 

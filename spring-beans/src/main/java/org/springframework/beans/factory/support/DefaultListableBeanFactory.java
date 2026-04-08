@@ -1153,6 +1153,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	}
 
 	private @Nullable CompletableFuture<?> preInstantiateSingleton(String beanName, RootBeanDefinition mbd) {
+		// 默认为False
 		if (mbd.isBackgroundInit()) {
 			Executor executor = getBootstrapExecutor();
 			if (executor != null) {
@@ -1210,8 +1211,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	}
 
 	private void instantiateSingleton(String beanName) {
+		// 根据beanName判断是不是FactoryBean，根据beanName找到BeanDefinition，找到对应类型进行判断
 		if (isFactoryBean(beanName)) {
-			// 这里创建的是FactoryBean
+			// 这里创建的是FactoryBean本身，beanName前面有&符号
 			Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
 			if (bean instanceof SmartFactoryBean<?> smartFactoryBean && smartFactoryBean.isEagerInit()) {
 				// 这里创建的是FactoryBean.getObject对象

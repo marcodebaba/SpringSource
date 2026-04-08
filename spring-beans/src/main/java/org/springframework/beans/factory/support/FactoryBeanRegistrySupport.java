@@ -158,6 +158,7 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 									object = postProcessObjectFromSingletonFactoryBean(object, beanName, locked);
 								}
 								if (containsSingleton(beanName)) {
+									// 把FactoryBean的getObject返回的对象放入factoryBeanObjectCache
 									this.factoryBeanObjectCache.put(beanName, object);
 								}
 							}

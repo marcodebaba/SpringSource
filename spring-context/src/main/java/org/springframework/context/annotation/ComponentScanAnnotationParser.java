@@ -64,9 +64,9 @@ class ComponentScanAnnotationParser {
 		this.registry = registry;
 	}
 
-
+	// 解析某一个@ComponentScan注解
 	public Set<BeanDefinitionHolder> parse(AnnotationAttributes componentScan, String declaringClass) {
-		// 构造一个扫描器,
+		// 构造一个扫描器，往includeFilters里添加@Component注解，默认扫描@Component
 		ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(this.registry,
 				componentScan.getBoolean("useDefaultFilters"), this.environment, this.resourceLoader);
 
@@ -116,6 +116,7 @@ class ComponentScanAnnotationParser {
 		for (Class<?> clazz : componentScan.getClassArray("basePackageClasses")) {
 			basePackages.add(ClassUtils.getPackageName(clazz));
 		}
+		// 如果basePackages为空，则将declaringClass的包名作为扫描路径
 		if (basePackages.isEmpty()) {
 			basePackages.add(ClassUtils.getPackageName(declaringClass));
 		}
@@ -126,6 +127,7 @@ class ComponentScanAnnotationParser {
 				return declaringClass.equals(className);
 			}
 		});
+		// 扫描basePackages路径下的所有类，并注册到BeanDefinitionRegistry中
 		return scanner.doScan(StringUtils.toStringArray(basePackages));
 	}
 

@@ -277,8 +277,10 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 			// 扫描basePackage中所有的类，并注册到BeanDefinitionRegistry
 			Set<BeanDefinition> candidates = findCandidateComponents(basePackage);
 			for (BeanDefinition candidate : candidates) {
+				// 获取BeanDefinition的scope
 				ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(candidate);
 				candidate.setScope(scopeMetadata.getScopeName());
+				// 生成beanName
 				String beanName = this.beanNameGenerator.generateBeanName(candidate, this.registry);
 				// BeanDefinition对象中的属性赋默认值
 				if (candidate instanceof AbstractBeanDefinition abstractBeanDefinition) {
@@ -288,8 +290,10 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 				if (candidate instanceof AnnotatedBeanDefinition annotatedBeanDefinition) {
 					AnnotationConfigUtils.processCommonDefinitionAnnotations(annotatedBeanDefinition);
 				}
+				// 检查beanName是否已经存在
 				if (checkCandidate(beanName, candidate)) {
 					BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(candidate, beanName);
+					// 如果设置了ScopedProxyMode，则会生成一个新的BeanDefinition，类型为ScopedProxyFactoryBean
 					definitionHolder =
 							AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
 					beanDefinitions.add(definitionHolder);
