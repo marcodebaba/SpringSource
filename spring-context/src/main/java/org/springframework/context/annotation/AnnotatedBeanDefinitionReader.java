@@ -86,7 +86,17 @@ public class AnnotatedBeanDefinitionReader {
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
 		Assert.notNull(environment, "Environment must not be null");
 		this.registry = registry;
+		// conditionEvaluator用来处理@Condition注解
 		this.conditionEvaluator = new ConditionEvaluator(registry, environment, null);
+		/*
+		 * 会注册一些额外的PostProcessor，包括：
+		 * ConfigurationClassPostProcessor：负责解析配置类
+		 * AutowiredAnnotationBeanPostProcessor：@Autowired
+		 * CommonAnnotationBeanPostProcessor：@Resource，@PostConstruct，@PreDestory
+		 * PersistenceAnnotationProcessor：JPA
+		 * EventListenerMethodProcessor
+		 * DefaultEventListenerFactory
+		 */
 		AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);
 	}
 

@@ -142,6 +142,7 @@ class ConstructorResolver {
 		ArgumentsHolder argsHolderToUse = null;
 		@Nullable Object[] argsToUse = null;
 
+		// getBean传入的args，那么构造方法的参数就确认好了
 		if (explicitArgs != null) {
 			argsToUse = explicitArgs;
 		}
@@ -164,6 +165,7 @@ class ConstructorResolver {
 			}
 		}
 
+		// 如果没有确定要用的构造方法或者确定了要用的构造方法，但是还没有确定构造方法的参数值
 		if (constructorToUse == null || argsToUse == null) {
 			// Take specified constructors, if any.
 			Constructor<?>[] candidates = chosenCtors;
@@ -203,13 +205,15 @@ class ConstructorResolver {
 					mbd.getResolvedAutowireMode() == AutowireCapableBeanFactory.AUTOWIRE_CONSTRUCTOR);
 			ConstructorArgumentValues resolvedValues = null;
 
-			// 根据getBean或者BeanDefinition中指定的构造方法参数值决定最小参数个数
+			// 根据getBean()或者BeanDefinition中指定的构造方法参数值决定构造方法的最小参数个数
 			// 接下来遍历过程中，直接给过滤掉参数个数小于minNrOfArgs的构造方法
 			int minNrOfArgs;
 			if (explicitArgs != null) {
+				// 如果getBean直接传了构造方法的参数个数，后续判断的构造方法参数个数如果小于minNrOfArgs则直接过滤掉
 				minNrOfArgs = explicitArgs.length;
 			}
 			else {
+				// BeanDefinition中的构造方法参数
 				ConstructorArgumentValues cargs = mbd.getConstructorArgumentValues();
 				resolvedValues = new ConstructorArgumentValues();
 				minNrOfArgs = resolveConstructorArguments(beanName, mbd, bw, cargs, resolvedValues);
@@ -236,11 +240,14 @@ class ConstructorResolver {
 				}
 
 				ArgumentsHolder argsHolder;
+				// 构造方法参数类型
 				Class<?>[] paramTypes = candidate.getParameterTypes();
+				// 没有通过getBean指定构造方法参数
 				if (resolvedValues != null) {
 					try {
 						@Nullable String[] paramNames = null;
 						if (resolvedValues.containsNamedArgument()) {
+							// 构造方法参数名字
 							paramNames = ConstructorPropertiesChecker.evaluate(candidate, parameterCount);
 							if (paramNames == null) {
 								ParameterNameDiscoverer pnd = this.beanFactory.getParameterNameDiscoverer();
@@ -249,7 +256,7 @@ class ConstructorResolver {
 								}
 							}
 						}
-						// 构造方法注入
+						// 返回当前构造方法参数匹配到的参数值
 						argsHolder = createArgumentArray(beanName, mbd, resolvedValues, bw, paramTypes, paramNames,
 								getUserDeclaredConstructor(candidate), autowiring, candidates.length == 1);
 					}
@@ -746,11 +753,14 @@ class ConstructorResolver {
 		Set<String> allAutowiredBeanNames = new LinkedHashSet<>(paramTypes.length * 2);
 
 		for (int paramIndex = 0; paramIndex < paramTypes.length; paramIndex++) {
+			// 构造方法参数类型
 			Class<?> paramType = paramTypes[paramIndex];
+			// 构造方法参数名字
 			String paramName = (paramNames != null ? paramNames[paramIndex] : "");
 			// Try to find matching constructor argument value, either indexed or generic.
 			ConstructorArgumentValues.ValueHolder valueHolder = null;
 			if (resolvedValues != null) {
+				// BeanDefinition中指定的构造方法参数值
 				valueHolder = resolvedValues.getArgumentValue(paramIndex, paramType, paramName, usedValueHolders);
 				// If we couldn't find a direct match and are not supposed to autowire,
 				// let's try the next generic, untyped argument value as fallback:
@@ -804,6 +814,7 @@ class ConstructorResolver {
 				try {
 					ConstructorDependencyDescriptor desc = new ConstructorDependencyDescriptor(methodParam, true);
 					Set<String> autowiredBeanNames = new LinkedHashSet<>(2);
+					// 根据参数名字和类型找Bean
 					Object arg = resolveAutowiredArgument(
 							desc, paramType, beanName, autowiredBeanNames, converter, fallback);
 					if (arg != null) {

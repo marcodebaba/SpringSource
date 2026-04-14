@@ -585,12 +585,21 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			StartupStep contextRefresh = this.applicationStartup.start("spring.context.refresh");
 
 			// Prepare this context for refreshing.
+			// 模板方法，供子类扩展
 			prepareRefresh();
 
 			// Tell the subclass to refresh the internal bean factory.
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// Prepare the bean factory for use in this context.
+			/**
+			* 设置beanFactory的类加载器
+			 * 设置类加载器，SPEL表达式解析器，类型转换器
+			 * 添加ApplicationContextAwareProcessor，ApplicationListenerDetector，LoadTimeWeaverAwareProcessor三个BeanPostProcessor
+			 * 记录ignoreDependencyInterface
+			 * 记录ResolvableDependency
+			 * Register default environment beans
+			**/
 			prepareBeanFactory(beanFactory);
 
 			try {
@@ -599,10 +608,15 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				StartupStep beanPostProcess = this.applicationStartup.start("spring.context.beans.post-process");
 				// Invoke factory processors registered as beans in the context.
-				// 执行BeanDefinitionRegistryPostProcessor和BeanFactoryPostProcessor
-				// 处理@Configuration注解，从而触发扫描
+				/*
+				* BeanFactory后置处理器
+				* 执行BeanDefinitionRegistryPostProcessor.postProcessbeanDefinitionRegistry()注册BeanDefinition
+				* 和BeanFactoryPostProcessor.postProcessBeanFactory()获取修改BeanDefinition
+				* 处理@Configuration注解，从而触发扫描(@ComponentScan, @Import, @Bean)生成BeanDefinition
+				*/
 				invokeBeanFactoryPostProcessors(beanFactory);
 				// Register bean processors that intercept bean creation.
+				// 将扫描到的BeanPostProcessor实例化并排序，并添加到BeanFactory的BeanPostProcessor属性中
 				registerBeanPostProcessors(beanFactory);
 				beanPostProcess.end();
 
@@ -616,9 +630,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				onRefresh();
 
 				// Check for listener beans and register them.
+				// 找出ApplicationListener并赋值给ApplicationEventMulticaster
 				registerListeners();
 
 				// Instantiate all remaining (non-lazy-init) singletons.
+				// 创建非懒加载单例Bean
 				finishBeanFactoryInitialization(beanFactory);
 
 				// Last step: publish corresponding event.
@@ -685,6 +701,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 		// Validate that all properties marked as required are resolvable:
 		// see ConfigurablePropertyResolver#setRequiredProperties
+		// 可以通过applicationContext.getEnvironment().setRequiredProperties()来设置必须得配置名
 		getEnvironment().validateRequiredProperties();
 
 		// Store pre-refresh ApplicationListeners...
@@ -729,8 +746,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 		// Tell the internal bean factory to use the context's class loader etc.
+		// set class loader
 		beanFactory.setBeanClassLoader(getClassLoader());
+		// set SPEL express Resolver
 		beanFactory.setBeanExpressionResolver(new StandardBeanExpressionResolver(beanFactory.getBeanClassLoader()));
+		// set default Editor
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 
 		// Configure the bean factory with context callbacks.
@@ -793,6 +813,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * <p>Must be called before singleton instantiation.
 	 */
 	protected void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory beanFactory) {
+		// 这里getBeanFactoryPostProcessors获得的是BeanFactoryPostProcessor或者BeanDefinitionRegistryPostProcessor
 		PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(beanFactory, getBeanFactoryPostProcessors());
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found in the meantime
@@ -1008,6 +1029,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		clearResourceCaches();
 
 		// Initialize lifecycle processor for this context.
+		// 设置LifecycleProcessor，默认用DefaultLifecycleProcessor
 		initLifecycleProcessor();
 
 		// Propagate refresh to lifecycle processor first.
