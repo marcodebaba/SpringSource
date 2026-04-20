@@ -111,6 +111,7 @@ public abstract class ConfigurationClassUtils {
 			return false;
 		}
 
+		// 类上的注解元数据
 		AnnotationMetadata metadata;
 		if (beanDef instanceof AnnotatedBeanDefinition annotatedBd &&
 				className.equals(annotatedBd.getMetadata().getClassName())) {
@@ -144,9 +145,13 @@ public abstract class ConfigurationClassUtils {
 		}
 
 		Map<String, @Nullable Object> config = metadata.getAnnotationAttributes(Configuration.class.getName());
+		// 如果有@Configuration，且proxyBeanMethods不等于false，就是Full配置类
 		if (config != null && !Boolean.FALSE.equals(config.get("proxyBeanMethods"))) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
+		// 如果有@Configuration，且proxyBeanMethods等于false，就是Lite配置类
+		// 如果没有@Configuration，但存在@Component，@ComponentScan，@Import，@ImportResource中的一个，就是Lite配置类
+		// 如果没有@Configuration，但存在@Bean注解的方法，就是Lite配置类
 		else if (config != null || Boolean.TRUE.equals(beanDef.getAttribute(CANDIDATE_ATTRIBUTE)) ||
 				isConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);

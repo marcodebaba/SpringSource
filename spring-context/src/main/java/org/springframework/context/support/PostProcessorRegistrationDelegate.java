@@ -64,7 +64,29 @@ final class PostProcessorRegistrationDelegate {
 	private PostProcessorRegistrationDelegate() {
 	}
 
-
+	/**
+	* Description：
+	 * BeanFactoryPostProcessors按入场方式分为：
+	 * 1. 程序员调用ApplicationContext的API手动添加
+	 * 2. Spring自己扫描出来的
+	 * <p>
+	 * BeanFactoryPostProcessor按类型又可以分为：
+	 * 1. 普通BeanFactoryPostProcessor
+	 * 2. BeanDefinitionRegistryPostProcessor
+	 * <p>
+	 * 执行顺序顺序如下：
+	 * 1. 执行手动添加的BeanDefinitionRegistryPostProcessor                       的postProcessBeanDefinitionRegistry()方法
+	 * 2. 执行扫描出来的BeanDefinitionRegistryPostProcessor（实现了PriorityOrdered）的postProcessBeanDefinitionRegistry()方法
+	 * 3. 执行扫描出来的BeanDefinitionRegistryPostProcessor（实现了Ordered）	   的postProcessBeanDefinitionRegistry()方法
+	 * 4. 执行扫描出来的BeanDefinitionRegistryPostProcessor（普通）				   的postProcessBeanDefinitionRegistry()方法
+	 * 5. 执行扫描出来的BeanDefinitionRegistryPostProcessor（所有）				   的postProcessBeanFactory()方法
+	 * 6. 执行手动添加的BeanFactoryPostProcessor								   的postProcessBeanFactory()方法
+	 * 7. 执行扫描出来的BeanFactoryPostProcessor（实现了PriorityOrdered）		   的postProcessBeanFactory()方法
+	 * 8. 执行扫描出来的BeanFactoryPostProcessor（实现了Ordered）		   		   的postProcessBeanFactory()方法
+	 * 9. 执行扫描出来的BeanFactoryPostProcessor（普通）				   		   的postProcessBeanFactory()方法
+	 * <p>
+	 * ConfigurationClassPostProcessor就会在第2步执行，会进行扫描
+	**/
 	public static void invokeBeanFactoryPostProcessors(
 			ConfigurableListableBeanFactory beanFactory, List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
 
@@ -88,12 +110,15 @@ final class PostProcessorRegistrationDelegate {
 			List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
 			List<BeanDefinitionRegistryPostProcessor> registryProcessors = new ArrayList<>();
 
+			// 处理手工添加的BeanPostProcessor
 			for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
+				// BeanDefinitionRegistryPostProcessor
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor registryProcessor) {
 					registryProcessor.postProcessBeanDefinitionRegistry(registry);
 					registryProcessors.add(registryProcessor);
 				}
 				else {
+					// BeanFactoryPostProcessor
 					regularPostProcessors.add(postProcessor);
 				}
 			}
@@ -105,6 +130,9 @@ final class PostProcessorRegistrationDelegate {
 			List<BeanDefinitionRegistryPostProcessor> currentRegistryProcessors = new ArrayList<>();
 
 			// First, invoke the BeanDefinitionRegistryPostProcessors that implement PriorityOrdered.
+			// 处理BeanFactory中实现了BeanDefinitionRegistryPostProcessor和PriorityOrdered接口的BeanPostProcessor
+			// 的postProcessBeanDefinitionRegistry方法
+			// 其中就包括了ConfigurationClassPostProcessor，扫描@Configuration
 			String[] postProcessorNames =
 					beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			for (String ppName : postProcessorNames) {
@@ -115,6 +143,7 @@ final class PostProcessorRegistrationDelegate {
 			}
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
 			registryProcessors.addAll(currentRegistryProcessors);
+			// 执行BeanDefinitionRegistryPostProcessor.postProcessBeanDefinitionRegistry
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry, beanFactory.getApplicationStartup());
 			currentRegistryProcessors.clear();
 
@@ -161,11 +190,13 @@ final class PostProcessorRegistrationDelegate {
 
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let the bean factory post-processors apply to them!
+		// 执行扫描出来的普通BeanFactoryPostProcessor
 		String[] postProcessorNames =
 				beanFactory.getBeanNamesForType(BeanFactoryPostProcessor.class, true, false);
 
 		// Separate between BeanFactoryPostProcessors that implement PriorityOrdered,
 		// Ordered, and the rest.
+		// BeanFactoryPostProcessor分类，并执行postProcessBeanFactory
 		List<BeanFactoryPostProcessor> priorityOrderedPostProcessors = new ArrayList<>();
 		List<String> orderedPostProcessorNames = new ArrayList<>();
 		List<String> nonOrderedPostProcessorNames = new ArrayList<>();
@@ -257,6 +288,7 @@ final class PostProcessorRegistrationDelegate {
 		}
 
 		// First, register the BeanPostProcessors that implement PriorityOrdered.
+		// 对BeanPostProcessor排序
 		sortPostProcessors(priorityOrderedPostProcessors, beanFactory);
 		registerBeanPostProcessors(beanFactory, priorityOrderedPostProcessors);
 
