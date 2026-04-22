@@ -306,6 +306,7 @@ class ConfigurationClassParser {
 			ConfigurationClass configClass, SourceClass sourceClass, Predicate<String> filter)
 			throws IOException {
 
+		// 配置类上有@Component，解析里面的内部类
 		if (configClass.getMetadata().isAnnotated(Component.class.getName())) {
 			// Recursively process any member (nested) classes first
 			processMemberClasses(configClass, sourceClass, filter);
@@ -372,6 +373,7 @@ class ConfigurationClassParser {
 		processImports(configClass, sourceClass, getImports(sourceClass), filter, true);
 
 		// Process any @ImportResource annotations
+		// 解析xml
 		AnnotationAttributes importResource =
 				AnnotationConfigUtils.attributesFor(sourceClass.getMetadata(), ImportResource.class);
 		if (importResource != null) {
@@ -384,7 +386,7 @@ class ConfigurationClassParser {
 		}
 
 		// Process individual @Bean methods
-		// 配置类里的@Bean方法
+		// 解析配置类里的@Bean方法，将@Bean的方法包装成BeanMethod对象，并添加到当前配置类的beanMethods属性中
 		Set<MethodMetadata> beanMethods = retrieveBeanMethodMetadata(sourceClass);
 		for (MethodMetadata methodMetadata : beanMethods) {
 			if (methodMetadata.isAnnotated("kotlin.jvm.JvmStatic") && !methodMetadata.isStatic()) {
@@ -394,7 +396,7 @@ class ConfigurationClassParser {
 		}
 
 		// Process default methods on interfaces
-		// 处理接口中默认方法，默认方法上也可以加@Bean
+		// 配置类所实现的接口中的@Bean，但没有真正处理@Bean，只是先找出来
 		processInterfaces(configClass, sourceClass);
 
 		// Process superclass, if any
@@ -607,6 +609,7 @@ class ConfigurationClassParser {
 					if (candidate.isAssignable(ImportSelector.class)) {
 						// Candidate class is an ImportSelector -> delegate to it to determine imports
 						Class<?> candidateClass = candidate.loadClass();
+						// 实例化实现了ImportSelector的对象
 						ImportSelector selector = ParserStrategyUtils.instantiateClass(candidateClass, ImportSelector.class,
 								this.environment, this.resourceLoader, this.registry);
 						Predicate<String> selectorFilter = selector.getExclusionFilter();
@@ -645,7 +648,7 @@ class ConfigurationClassParser {
 					else {
 						// Candidate class not an ImportSelector or ImportBeanDefinitionRegistrar ->
 						// process it as an @Configuration class
-						// 导入的是普通类
+						// @Import导入的类是普通类
 						this.importStack.registerImport(
 								currentSourceClass.getMetadata(), candidate.getMetadata().getClassName());
 						// 把导入的类包装成一个配置类
