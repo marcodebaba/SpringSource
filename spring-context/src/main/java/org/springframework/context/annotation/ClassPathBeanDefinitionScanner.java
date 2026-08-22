@@ -162,7 +162,7 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
 		this.registry = registry;
 
-		// 默认会扫描@Component
+		// 往includeFilters里添加@Component注解，默认会扫描@Component
 		if (useDefaultFilters) {
 			registerDefaultFilters();
 		}
@@ -274,7 +274,7 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 		Assert.notEmpty(basePackages, "At least one base package must be specified");
 		Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<>();
 		for (String basePackage : basePackages) {
-			// 扫描basePackage中所有的类，并注册到BeanDefinitionRegistry
+			// 扫描basePackage中所有的类，生成BeanDefinition
 			Set<BeanDefinition> candidates = findCandidateComponents(basePackage);
 			for (BeanDefinition candidate : candidates) {
 				// 获取BeanDefinition的scope
@@ -297,7 +297,7 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 					definitionHolder =
 							AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
 					beanDefinitions.add(definitionHolder);
-					// 注册BeanDefinition
+					// 注册到BeanDefinition
 					registerBeanDefinition(definitionHolder, this.registry);
 				}
 			}
